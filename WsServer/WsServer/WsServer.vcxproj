@@ -74,6 +74,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>E:\project\c++\github\myProject\WsServer\WsServer\WsServer;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -102,7 +103,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,6 +148,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ws\sha1\sha1.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ws\sha1\sha1.hpp" />
+    <ClInclude Include="ws\WsBitUtils.hpp" />
+    <ClInclude Include="ws\WsEnDecryptUtils.hpp" />
+    <ClInclude Include="ws\WsSafeConList.hpp" />
+    <ClInclude Include="ws\WsConnect.hpp" />
+    <ClInclude Include="ws\WsServer.hpp" />
+    <ClInclude Include="ws\WsService.hpp" />
+    <ClInclude Include="ws\WsStringUtils.hpp" />
+    <ClInclude Include="ws\WsTypeConvertUtils.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

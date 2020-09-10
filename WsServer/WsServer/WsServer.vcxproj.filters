@@ -18,5 +18,37 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ws\sha1\sha1.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ws\WsServer.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ws\WsService.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ws\WsConnect.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ws\WsSafeConList.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ws\WsStringUtils.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ws\WsEnDecryptUtils.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ws\sha1\sha1.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ws\WsTypeConvertUtils.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ws\WsBitUtils.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
