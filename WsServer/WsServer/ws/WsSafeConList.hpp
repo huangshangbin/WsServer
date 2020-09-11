@@ -16,6 +16,16 @@ private:
 
 	deque<WsConnect*> m_conList;
 
+public:
+	WsSafeConList() {}
+	~WsSafeConList()
+	{
+		for (int i = 0; i < m_conList.size(); i++)
+		{
+			delete m_conList[i];
+		}
+	}
+
 
 public:
 	void injectConnect(WsConnect* con)
@@ -25,11 +35,32 @@ public:
 		m_conList.push_back(con);
 	}
 
-	WsConnect* getCon(int index)
+	WsConnect* getConnect(SOCKET socketHandle)
 	{
 		lock_guard<mutex> lockGuard(m_mutex);
 
-		return m_conList[index];
+		for (auto it = m_conList.begin(); it != m_conList.end(); it++)
+		{
+			if ((*it)->getSocketHandle() == socketHandle)
+			{
+				return *it;
+			}
+		}
+
+		return nullptr;
+	}
+
+	deque<WsConnect> getCurConnectList()
+	{
+		lock_guard<mutex> lockGuard(m_mutex);
+
+		deque<WsConnect> curConList;
+		for (auto& con : m_conList)
+		{
+			curConList.push_back((*con));
+		}
+
+		return std::move(curConList);
 	}
 
 	bool erase(SOCKET socketHandle)

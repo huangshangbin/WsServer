@@ -2,10 +2,10 @@
 
 
 #include "WsService.hpp"
-#include "WsStringUtils.hpp"
-#include "WsEnDecryptUtils.hpp"
-#include "WsTypeConvertUtils.hpp"
-#include "WsBitUtils.hpp"
+#include "utils/WsPathUtils.hpp"
+#include "utils/WsRequestUtils.hpp"
+#include "utils/WsDataFrameUtils.hpp"
+#include "WsSafeConList.hpp"
 
 #include <iostream>
 #include <string>
@@ -175,15 +175,15 @@ private:
 
 					if (isSuccess == FALSE)//The client disconnected the link
 					{
-						closesocket(wsSocketData->m_clientSocket);
-						delete wsSocketData;
+						closeConnect(wsSocketData);
+
 						continue;
 					}
 
 					if (receiveByteSize == 0)//Maybe the client sent an empty packet
 					{
-						closesocket(wsSocketData->m_clientSocket);
-						delete wsSocketData;
+						closeConnect(wsSocketData);
+
 						continue;
 					}
 
@@ -191,29 +191,32 @@ private:
 
 					if (wsSocketData->m_totalBuffer[0] == 'G')
 					{
-						if (this->isValidConRequest(wsSocketData->m_totalBuffer) && this->bindToConList(wsSocketData))
+						if (WsRequestUtils::isValidConRequest(wsSocketData->m_totalBuffer) && this->bindToConList(wsSocketData))
 						{
-							this->buildLink(wsSocketData);
+							deque<WsConnect> curConList = this->getConnectList(wsSocketData->m_clientSocket)->getCurConnectList();
+							this->getService(wsSocketData->m_clientSocket)->open(curConList, this->getConnect(wsSocketData->m_clientSocket));
+
+							WsRequestUtils::buildLink(wsSocketData->m_totalBuffer, wsSocketData->m_clientSocket);
 							wsSocketData->m_totalBuffer.clear();
 						}
 						else
 						{
-							closesocket(wsSocketData->m_clientSocket);
-							delete wsSocketData;
+							closeConnect(wsSocketData);
+
 							continue;
 						}
 					}
-					else if ((receiveByteSize < WS_BUFFER_SIZE) || this->isCompleteDataFrame(wsSocketData->m_totalBuffer))
+					else if ((receiveByteSize < WS_BUFFER_SIZE) || WsDataFrameUtils::isComplete(wsSocketData->m_totalBuffer))
 					{
 						if (this->isValidConnect(wsSocketData->m_clientSocket) == false)
 						{
-							closesocket(wsSocketData->m_clientSocket);
-							delete wsSocketData;
+							closeConnect(wsSocketData);
+
 							continue;
 						}
 						else
 						{
-							this->handleDataFrame(wsSocketData);
+							this->handleDataFrame(wsSocketData->m_totalBuffer);
 							wsSocketData->m_totalBuffer.clear();
 						}
 					}
@@ -232,36 +235,6 @@ private:
 
 //createWorkerThread
 private:
-	bool isValidConRequest(string& requestData)
-	{
-		if (WsStringUtils::isExistStringInString(requestData, "GET") == false)
-		{
-			return false;
-		}
-
-		if (WsStringUtils::isExistStringInString(requestData, "Sec-WebSocket-Key") == false)
-		{
-			return false;
-		}
-
-		if (WsStringUtils::isExistStringInString(requestData, "Upgrade") == false)
-		{
-			return false;
-		}
-
-		if (WsStringUtils::isExistStringInString(requestData, "websocke") == false)
-		{
-			return false;
-		}
-
-		if (WsStringUtils::isExistStringInString(requestData, "Sec-WebSocket-Version") == false)
-		{
-			return false;
-		}
-
-		return true;
-	}
-
 	bool bindToConList(WsSocketData* requestSocketData)
 	{
 		string path = WsStringUtils::getStringUseCharStart(requestSocketData->m_totalBuffer, '/');
@@ -270,7 +243,7 @@ private:
 		string bindPath = getBindPath(path);
 		if (isValidPath(path) && m_pathConlistMap[bindPath]->isExistConnect(requestSocketData->m_clientSocket) == false)
 		{
-			WsConnect* wsConnect = new WsConnect(requestSocketData->m_clientSocket, getPathParam(path));
+			WsConnect* wsConnect = new WsConnect(requestSocketData->m_clientSocket, WsPathUtils::getParam(path, bindPath));
 
 			m_pathConlistMap[bindPath]->injectConnect(wsConnect);
 
@@ -282,59 +255,89 @@ private:
 		}
 	}
 
-	void buildLink(WsSocketData* requestSocketData)
+	WsConnect* getConnect(SOCKET socketHandle)
 	{
-		string key = WsStringUtils::splitStringGetOneStr(requestSocketData->m_totalBuffer, "Sec-WebSocket-Key", 1);
-		key = WsStringUtils::getStringUseCharStart(key, ' ');
-		key = WsStringUtils::getStringUseCharEnd(key, '\r');
+		for (auto& it : m_pathConlistMap)
+		{
+			if (it.second->isExistConnect(socketHandle))
+			{
+				return it.second->getConnect(socketHandle);
+			}
+		}
 
-		string response = "HTTP/1.1 101 Switching Protocols\r\n"\
-			"Upgrade:websocket\r\n"\
-			"Connection:Upgrade\r\n"\
-			"Sec-WebSocket-Accept:" + getAccept(key) + "\r\n"\
-			"\r\n";
-
-		::send(requestSocketData->m_clientSocket, response.c_str(), response.length(), 0);
-
-
+		return nullptr;
 	}
 
-	bool isCompleteDataFrame(string& dataBuffer)
+	WsSafeConList* getConnectList(SOCKET socketHandle)
 	{
-		int msgLengthMark = WsBitUtils::getIntUseCharPos(dataBuffer[1], 1, 7);
-		if (msgLengthMark < 126)
+		for (auto& it : m_pathConlistMap)
 		{
-			return dataBuffer.length() == (2 + 4 + msgLengthMark);
+			if (it.second->isExistConnect(socketHandle))
+			{
+				return it.second;
+			}
 		}
-		else if (msgLengthMark == 126)
-		{
-			int msgLength = WsBitUtils::getUnsignShort(dataBuffer[2], dataBuffer[3]);
-			return dataBuffer.length() == (2 + 2 + 4 + msgLength);
-		}
-		else
-		{
-			int msgLength = WsBitUtils::getUnsignLongLong(dataBuffer[2], dataBuffer[3], dataBuffer[4], dataBuffer[5],
-				dataBuffer[6], dataBuffer[7], dataBuffer[8], dataBuffer[9]);
 
-			return dataBuffer.length() == (2 + 8 + 4 + msgLength);
+		return nullptr;
+	}
+
+	WsService* getService(SOCKET socketHandle)
+	{
+		for (auto& it : m_pathConlistMap)
+		{
+			if (it.second->isExistConnect(socketHandle))
+			{
+				return m_pathServiceMap[it.first];
+			}
 		}
+
+		return nullptr;
 	}
 
 	bool isValidConnect(SOCKET socketHandle)
 	{
-		// 是否在m_socketConMap里面，不在是非法的
+		for (auto& it : m_pathConlistMap)
+		{
+			if (it.second->isExistConnect(socketHandle))
+			{
+				return true;
+			}
+		}
 
-		return true;
+		return false;
 	}
 
-	void handleDataFrame(WsSocketData* requestSocketData)
+	void handleDataFrame(string& dataFrame)
 	{
-		
+		string dataFrameCopy = dataFrame;
 	}
 
 	void closeConnect(WsSocketData* wsSocketData)
 	{
-		//移除链接在map里面的记录，close socket。
+		SOCKET socketHandle = wsSocketData->m_clientSocket;
+
+		if (isValidConnect(socketHandle))
+		{
+			deque<WsConnect> conList = getConnectList(socketHandle)->getCurConnectList();
+			getService(socketHandle)->disConnect(conList, getConnect(socketHandle));
+
+			for (auto& it : m_pathConlistMap)
+			{
+				if (it.second->erase(socketHandle))
+				{
+					closesocket(socketHandle);
+					delete wsSocketData;
+					wsSocketData = nullptr;
+
+					break;
+				}
+			}
+		}
+		else
+		{
+			closesocket(socketHandle);
+			delete wsSocketData;
+		}
 	}
 
 
@@ -345,7 +348,7 @@ private:
 	{
 		for (auto& it : m_pathConlistMap)
 		{
-			if (isMatchPath(path, it.first))
+			if (WsPathUtils::isMatch(path, it.first))
 			{
 				return true;
 			}
@@ -353,17 +356,11 @@ private:
 		return false;
 	}
 
-	map<string, string> getPathParam(string path)
-	{
-		map<string, string> paramMap;
-		return std::move(paramMap);
-	}
-
 	string getBindPath(string path)
 	{
 		for (auto& it : m_pathConlistMap)
 		{
-			if (isMatchPath(path, it.first))
+			if (WsPathUtils::isMatch(path, it.first))
 			{
 				return it.first;
 			}
@@ -371,53 +368,6 @@ private:
 
 		return "";
 	}
-
-//buildLink
-private:
-	string getAccept(string key)
-	{
-		string acceptStr = key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-		acceptStr = WsEnDecryptUtils::sha1Encrypt(acceptStr);
-
-		char acceptArray[1000] = { 0 };
-		int arrayIndex = 0;
-		for (int i = 0; i <= acceptStr.length() - 2; i = i + 2)
-		{
-			acceptArray[arrayIndex] = (int)WsTypeConvertUtils::getLongUseHexStr(WsStringUtils::getStringUsePos(acceptStr, i, i + 1));
-			arrayIndex++;
-		}
-
-		acceptStr = acceptArray;
-		return WsEnDecryptUtils::base64Encode(acceptStr);
-	}
-
-//isValidPath
-private:
-	bool isMatchPath(string path, string restfulPath)
-	{
-		deque<string> pathList = WsStringUtils::splitString(path, "/");
-		deque<string> restfulPathList = WsStringUtils::splitString(restfulPath, "/");
-		if (pathList.size() != restfulPathList.size())
-		{
-			return false;
-		}
-
-		for (int i = 0; i < pathList.size(); i++)
-		{
-			if ((restfulPathList[i][0] == '{') && (restfulPathList[i][restfulPathList.size() - 1] == '}'))
-			{
-				continue;
-			}
-
-			if (pathList[i] != restfulPathList[i])
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-
 };
 
 

@@ -152,14 +152,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ws\sha1\sha1.hpp" />
-    <ClInclude Include="ws\WsBitUtils.hpp" />
-    <ClInclude Include="ws\WsEnDecryptUtils.hpp" />
+    <ClInclude Include="ws\utils\WsBitUtils.hpp" />
+    <ClInclude Include="ws\utils\WsDataFrameUtils.hpp" />
+    <ClInclude Include="ws\utils\WsEnDecryptUtils.hpp" />
+    <ClInclude Include="ws\utils\WsPathUtils.hpp" />
+    <ClInclude Include="ws\utils\WsRequestUtils.hpp" />
     <ClInclude Include="ws\WsSafeConList.hpp" />
     <ClInclude Include="ws\WsConnect.hpp" />
     <ClInclude Include="ws\WsServer.hpp" />
     <ClInclude Include="ws\WsService.hpp" />
-    <ClInclude Include="ws\WsStringUtils.hpp" />
-    <ClInclude Include="ws\WsTypeConvertUtils.hpp" />
+    <ClInclude Include="ws\utils\WsStringUtils.hpp" />
+    <ClInclude Include="ws\utils\WsTypeConvertUtils.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

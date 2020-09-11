@@ -9,7 +9,7 @@ int main()
 	WsServer wsServer;
 	wsServer.setMostThreadCount(8);
 
-	wsServer.injectService("/", new WsService());
+	wsServer.injectService("/{name}/{age}", new WsService());
 
 
 	wsServer.listen("127.0.0.1", 4000);

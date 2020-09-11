@@ -4,6 +4,7 @@
 #include <WinSock2.h>
 
 #include <map>
+#include <deque>
 
 class WsConnect
 {
@@ -29,11 +30,29 @@ public:
 		return m_pathParamMap[key];
 	}
 
+	deque<string> getUrlParamKeyList()
+	{
+		deque<string> keyList;
+		for (auto& it : m_pathParamMap)
+		{
+			keyList.push_back(it.first);
+		}
+
+		return std::move(keyList);
+	}
+
 public:
 	void sendText(string& text) 
 	{
 		::send(m_socket, text.c_str(), text.length(), 0);//Synchronous transmission to avoid data copy
 	}
+
+	void sendClose()
+	{
+
+	}
+
+private:
 
 };
 

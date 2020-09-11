@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include <ws/sha1/sha1.hpp>
+#include "../sha1/sha1.hpp"
 
 #include <iostream>
 #include <string>
