@@ -10,33 +10,18 @@ using namespace std;
 class WsService
 {
 public:
-	virtual void open(deque<WsConnect>& connectList, WsConnect* curConect)
-	{
-		deque<string> keyList = curConect->getUrlParamKeyList();
-		for (auto& key : keyList)
-		{
-			cout << key << "  = " << curConect->getUrlParam(key) << "  ;";
-		}
+	virtual void open(deque<WsConnect>& connectList, WsConnect* curConnect) {}
+	virtual void message(deque<WsConnect>& connectList, WsConnect* curConnect, string& reqMessage) {}
 
-		cout << endl;
+	virtual void close(deque<WsConnect>& connectList, WsConnect* curConnect)
+	{
+		curConnect->sendClose();
 	}
 
-
-	virtual void message(deque<WsConnect>& connectList, WsConnect* curConect, string& reqMessage)
-	{
-	}
-
-
-	virtual void close(deque<WsConnect>& connectList, WsConnect* curConect) 
-	{
-		cout << curConect->getUrlParam("name") << " ¹Ø±Õ" << endl;
-	}
+	virtual void typeError(deque<WsConnect>& connectList, WsConnect* curConnect) {}
 
 
 public:
-	virtual void disConnect(deque<WsConnect>& connectList, WsConnect* curConect)
-	{
-		cout << curConect->getUrlParam("name") << " Á´½Ó¶Ï¿ª" << endl;
-	}
+	virtual void disConnect(deque<WsConnect>& connectList, WsConnect* curConect) {}
 };
 

@@ -1,5 +1,5 @@
 git add .
-git commit -am "modify bug"
+git commit -am "complete"
 git push origin master
 echo "push complete"
 pause

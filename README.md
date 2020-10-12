@@ -3,5 +3,7 @@ be careful:
 
 2   ping pong is not supported, server not disconnect connnect
 
+3 receive disconnect not receive close, description link abnormally disconnected.
+
 
 

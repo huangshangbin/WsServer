@@ -194,10 +194,11 @@ private:
 						if (WsRequestUtils::isValidConRequest(wsSocketData->m_totalBuffer) && this->bindToConList(wsSocketData))
 						{
 							deque<WsConnect> curConList = this->getConnectList(wsSocketData->m_clientSocket)->getCurConnectList();
-							this->getService(wsSocketData->m_clientSocket)->open(curConList, this->getConnect(wsSocketData->m_clientSocket));
-
+							
 							WsRequestUtils::buildLink(wsSocketData->m_totalBuffer, wsSocketData->m_clientSocket);
 							wsSocketData->m_totalBuffer.clear();
+
+							this->getService(wsSocketData->m_clientSocket)->open(curConList, this->getConnect(wsSocketData->m_clientSocket));
 						}
 						else
 						{
@@ -216,7 +217,7 @@ private:
 						}
 						else
 						{
-							this->handleDataFrame(wsSocketData->m_totalBuffer);
+							this->handleDataFrame(wsSocketData);
 							wsSocketData->m_totalBuffer.clear();
 						}
 					}
@@ -307,9 +308,34 @@ private:
 		return false;
 	}
 
-	void handleDataFrame(string& dataFrame)
+	void handleDataFrame(WsSocketData* wsSocketData)//parse message type
 	{
-		string dataFrameCopy = dataFrame;
+		deque<WsConnect> conList = getConnectList(wsSocketData->m_clientSocket)->getCurConnectList();
+
+		int dataType = WsDataFrameUtils::getType(wsSocketData->m_totalBuffer);
+		switch (dataType)
+		{
+		case 1:
+		{
+			string msg = WsDataFrameUtils::getMsg(wsSocketData->m_totalBuffer);
+			getService(wsSocketData->m_clientSocket)->message(conList, getConnect(wsSocketData->m_clientSocket), msg);
+			break;
+		}
+		case 2:
+		{
+			string msg = WsDataFrameUtils::getMsg(wsSocketData->m_totalBuffer);
+			getService(wsSocketData->m_clientSocket)->message(conList, getConnect(wsSocketData->m_clientSocket), msg);
+			break;
+		}
+		case 8:
+		{
+			getService(wsSocketData->m_clientSocket)->close(conList, getConnect(wsSocketData->m_clientSocket));
+			break;
+		}
+		default:
+			getService(wsSocketData->m_clientSocket)->typeError(conList, getConnect(wsSocketData->m_clientSocket));
+			break;
+		}
 	}
 
 	void closeConnect(WsSocketData* wsSocketData)
