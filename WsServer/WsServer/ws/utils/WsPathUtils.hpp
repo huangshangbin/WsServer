@@ -4,6 +4,7 @@
 
 #include <deque>
 #include <string>
+#include <map>
 using namespace std;
 
 class WsPathUtils
